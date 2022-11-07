@@ -202,13 +202,24 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
 
     for(unsigned k = 0; k < S2_DEC_FACTOR; k++){
       hist[0] = pdm_data[mic][k];
-      int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
-      shift_buffer(hist);
+      // int32_t streamA_sample = fir_1x16_bit(hist, this->stage1.filter_coef);
+      // shift_buffer(hist);
 
       if(k < (S2_DEC_FACTOR-1)){
-        xs3_filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
+        // xs3_filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
       } else {
-        sample_out[mic] = xs3_filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
+        // 0 = +1, 1 = -1
+        int32_t accum = 0;
+        for(int i = 0; i < 32; ++i) {
+          if(hist[0] & 1)
+            accum -= 1;
+          else
+            accum += 1;
+
+          hist[0] >>= 1;
+        }
+        int32_t streamA_sample = accum << 23;
+        sample_out[mic] = streamA_sample; // xs3_filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
       }
     }
   }
