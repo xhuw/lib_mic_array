@@ -208,17 +208,21 @@ void mic_array::TwoStageDecimator<MIC_COUNT,S2_DEC_FACTOR,S2_TAP_COUNT>
       if(k < (S2_DEC_FACTOR-1)){
         // xs3_filter_fir_s32_add_sample(&this->stage2.filters[mic], streamA_sample);
       } else {
+        // take the DEC_FACTOR'th pdm block and convert it to a sample manually
+        // so that there is no filtering applied
         // 0 = +1, 1 = -1
         int32_t accum = 0;
         for(int i = 0; i < 32; ++i) {
-          if(hist[0] & 1)
+          if(hist[0] & uint32_t {1})
             accum -= 1;
           else
             accum += 1;
 
           hist[0] >>= 1;
         }
-        int32_t streamA_sample = accum << 23;
+        // accum is in the range -32 to 32, including sign bits that is 7 bits of data.
+        // 32 - 7 = 25, left shift 25 to get full scale.
+        int32_t streamA_sample = accum << 25;
         sample_out[mic] = streamA_sample; // xs3_filter_fir_s32(&this->stage2.filters[mic], streamA_sample);
       }
     }
