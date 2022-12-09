@@ -141,15 +141,13 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TOutputHandler>::ThreadEntry()
 {
   int32_t sample_out[MIC_COUNT] = {0};
-  int32_t send_buf[MIC_COUNT] = {0};
-
+  bool data_ready = false;
   while(1){
     uint32_t* pdm_samples = PdmRx.GetPdmBlock();
-    OutputHandler.OutputSample(send_buf);
+    if(data_ready)
+      OutputHandler.OutputSample(sample_out);
+    data_ready = true;
     Decimator.ProcessBlock(sample_out, pdm_samples);
     SampleFilter.Filter(sample_out);
-    for(int i = 0; i < MIC_COUNT; ++i) {
-      send_buf[i] = sample_out[i];
-    }
   }
 }
