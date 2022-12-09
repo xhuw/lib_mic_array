@@ -3,6 +3,10 @@
 
 #pragma once
 
+#include "xcore/hwtimer.h"
+extern "C" {
+#include "xscope.h"
+}
 #include <cstdint>
 #include <string>
 #include <cassert>
@@ -141,8 +145,18 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TOutputHandler>::ThreadEntry()
 {
   int32_t sample_out[MIC_COUNT] = {0};
-
+  uint32_t t=0;
   while(1){
+    uint32_t now = get_reference_time();
+    if(t) {
+      xscope_int(8, now - t); // 8 = MIC_PERIOD
+      uint32_t mips = get_reference_time();
+      for(volatile int i = 0; i < 5; ++i);
+      xscope_int(9, get_reference_time() - mips);
+    }
+    t = now;
+
+
     uint32_t* pdm_samples = PdmRx.GetPdmBlock();
     Decimator.ProcessBlock(sample_out, pdm_samples);
     SampleFilter.Filter(sample_out);
