@@ -145,21 +145,24 @@ void mic_array::MicArray<MIC_COUNT,TDecimator,TPdmRx,
                                    TOutputHandler>::ThreadEntry()
 {
   int32_t sample_out[MIC_COUNT] = {0};
-  uint32_t t=0;
+  uint32_t t=0, p=0, mips=0;
   while(1){
-    uint32_t now = get_reference_time();
-    if(t) {
-      xscope_int(8, now - t); // 8 = MIC_PERIOD
-      uint32_t mips = get_reference_time();
-      for(volatile int i = 0; i < 5; ++i);
-      xscope_int(9, get_reference_time() - mips);
+    if(p) {
+      xscope_int(8, p); // 8 = MIC_PERIOD
+      xscope_int(9, mips);
     }
-    t = now;
-
 
     uint32_t* pdm_samples = PdmRx.GetPdmBlock();
+
+    OutputHandler.OutputSample(sample_out);
+    uint32_t now = get_reference_time();
+    if(t) p = now - t;
+    t = now;
+    mips = get_reference_time();
+    for(volatile int i = 0; i < 5; ++i);
+    mips = get_reference_time() - mips;
+
     Decimator.ProcessBlock(sample_out, pdm_samples);
     SampleFilter.Filter(sample_out);
-    OutputHandler.OutputSample(sample_out);
   }
 }
